@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CMS認音大挑戰</title>
+    <style>
+        :root {
+            --forest-green: #1B4332;
+            --leaf-green: #74C69D;
+            --wood-brown: #604439;
+            --sand-light: #F8F4E3;
+            --text-serif: "Times New Roman", "SimSun", "PMingLiU", serif;
+        }
+
+        body {
+            font-family: var(--text-serif);
+            background: linear-gradient(135deg, #D8F3DC 0%, #95D5B2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+            color: var(--forest-green);
+        }
+
+        #game-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 40px;
+            box-shadow: 0 12px 0px var(--wood-brown), 0 20px 40px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 980px;
+            position: relative;
+            text-align: center;
+            border: 6px solid var(--sand-light);
+        }
+
+        h1#main-title {
+            font-size: 2.5rem;
+            margin: 10px 0;
+            color: var(--forest-green);
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .badge {
+            background: var(--sand-light);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: 2px solid var(--wood-brown);
+        }
+
+        #canvas-wrapper {
+            background: white;
+            border-radius: 25px;
+            border: 6px solid var(--leaf-green);
+            margin: 15px auto;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 98%; 
+            padding: 12px; 
+            box-sizing: border-box;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        #answer-area {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 25px 0;
+            min-height: 200px;
+        }
+
+        .animal-btn {
+            background: #FFF;
+            border: 4px solid var(--wood-brown);
+            border-radius: 30px;
+            padding: 15px;
+            width: 160px;
+            cursor: pointer;
+            box-shadow: 0 8px 0 var(--wood-brown);
+            transition: all 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .animal-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 var(--wood-brown);
+        }
+
+        .animal-img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+
+        .letter-name {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--wood-brown);
+            font-family: var(--text-serif);
+        }
+
+        @keyframes shakeEffect {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-2px); }
+            100% { transform: translateX(0); }
+        }
+        .shake-btn {
+            animation: shakeEffect 0.3s ease-in-out 0s 1;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 34px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .btn-forest {
+            font-family: var(--text-serif);
+            background: var(--forest-green);
+            color: white;
+            padding: 15px 35px;
+            border-radius: 50px;
+            font-size: 1.4rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--wood-brown);
+            font-weight: bold;
+            margin: 10px;
+            width: 300px;
+        }
+
+        input#playerNameInput {
+            font-family: var(--text-serif);
+            padding: 12px 20px;
+            font-size: 1.4rem;
+            border-radius: 50px;
+            border: 3px solid var(--leaf-green);
+            outline: none;
+            text-align: center;
+            width: 280px;
+            margin: 15px 0;
+        }
+
+        #rank-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 95%;
+            height: 100%;
+            justify-content: center;
+        }
+
+        .rank-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .rank-table th { background: var(--leaf-green); padding: 12px; color: white; }
+        .rank-table td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
+
+        .tab-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .tab-btn {
+            font-family: var(--text-serif);
+            padding: 8px 15px; border-radius: 12px; border: 2px solid var(--forest-green);
+            background: white; cursor: pointer; margin: 0 2px; font-weight: bold;
+        }
+        .tab-btn.active { background: var(--forest-green); color: white; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1 id="main-title">CMS認音大挑戰</h1>
+    
+    <div class="stats-bar">
+        <div class="badge" id="lv-display">LV 1</div>
+        <div class="badge" id="count-display">1 / 10</div>
+        <div class="badge">⭐ <span id="score-val">0</span></div>
+    </div>
+
+    <div id="canvas-wrapper">
+        <canvas id="gameCanvas" width="1000" height="650"></canvas>
+    </div>
+    
+    <div id="answer-area"></div>
+
+    <div id="overlay">
+        <div id="menu-view">
+            <h1 style="font-size: 3rem; margin-bottom: 20px;">CMS認音大挑戰</h1>
+            <p style="color: var(--wood-brown); font-weight: bold; font-size: 1.2rem;">挑戰開始！請選擇等級：</p>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; max-width: 700px;">
+                <button class="btn-forest" onclick="startGame(1)">Level 1 (C, D, E)</button>
+                <button class="btn-forest" onclick="startGame(2)">Level 2 (C - G)</button>
+                <button class="btn-forest" onclick="startGame(3)">Level 3 (C - B)</button>
+                <button class="btn-forest" onclick="startGame(4)">Level 4 (C - D')</button>
+                <button class="btn-forest" onclick="startGame(5)">Level 5 (C - G')</button>
+            </div>
+            <button class="btn-forest" style="background: var(--wood-brown); margin-top: 30px; width: 220px;" onclick="showRank()">🏆 高手排行榜</button>
+        </div>
+
+        <div id="result-view" style="display: none;">
+            <h2 id="result-title" style="font-size: 3.5rem; color: var(--forest-green); margin-bottom: 10px;">太利害啦！</h2>
+            <p id="result-text" style="font-size: 1.8rem; margin: 5px 0;"></p>
+            <p id="time-text" style="color: var(--wood-brown); font-weight: bold; font-size: 1.3rem;"></p>
+            
+            <div class="input-group">
+                <p>輸入名字記錄成績（選填）：</p>
+                <input type="text" id="playerNameInput" placeholder="你的名字..." maxlength="10">
+            </div>
+
+            <button class="btn-forest" onclick="submitAndRestart()">記錄並再玩一次</button>
+            <button class="btn-forest" style="background: var(--leaf-green); color: var(--forest-green);" onclick="submitAndGoHome()">記錄並回首頁</button>
+        </div>
+
+        <div id="rank-view" style="display: none;">
+            <h1 style="margin-top: 0; font-size: 2rem;">CMS認音大挑戰 - 高手排行榜</h1>
+            <div class="tab-group">
+                <button class="tab-btn active" onclick="updateRankUI('all')">全部</button>
+                <button class="tab-btn" onclick="updateRankUI(1)">LV 1</button>
+                <button class="tab-btn" onclick="updateRankUI(2)">LV 2</button>
+                <button class="tab-btn" onclick="updateRankUI(3)">LV 3</button>
+                <button class="tab-btn" onclick="updateRankUI(4)">LV 4</button>
+                <button class="tab-btn" onclick="updateRankUI(5)">LV 5</button>
+            </div>
+            <div style="max-height: 350px; overflow-y: auto; background: white; border-radius: 15px; width: 100%; margin: 10px 0;">
+                <table class="rank-table">
+                    <thead><tr><th>排名</th><th>名稱</th><th>LV</th><th>分數</th><th>耗時</th><th>日期</th></tr></thead>
+                    <tbody id="rank-body"></tbody>
+                </table>
+            </div>
+            <button class="btn-forest" style="width: 200px; margin-top: 10px;" onclick="goHome()">回首頁</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let curLv = 1;
+    let score = 0;
+    let targetNote = "";
+    let lastTargetNote = "";
+    let questionsLeft = 10;
+    let startTime, endTime;
+    let isAnswering = false;
+
+    const s = 91;
+    const clefDownTotal = 90;
+
+    const notesMap = {
+        1: ["C4", "D4", "E4"],
+        2: ["C4", "D4", "E4", "F4", "G4"],
+        3: ["C4", "D4", "E4", "F4", "G4", "A4", "B4"],
+        4: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5"],
+        5: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5"]
+    };
+
+    const animalImgs = {
+        'C': 'cat-h.PNG', 'D': 'dog-h.PNG', 'E': 'elephant-h.PNG',
+        'F': 'frog-h.PNG', 'G': 'giraffe-h.PNG', 'A': 'ape-h.PNG', 'B': 'bear-h.PNG'
+    };
+
+    const stepData = {
+        "C4": -2, "D4": -1, "E4": 0, "F4": 1, "G4": 2, "A4": 3, "B4": 4,
+        "C5": 5, "D5": 6, "E5": 7, "F5": 8, "G5": 9
+    };
+
+    function drawScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const fixedMaxLines = 5;
+        const fixedStaffHeight = (fixedMaxLines - 1) * s;
+        const baseLineY = (canvas.height + fixedStaffHeight) / 2;
+
+        /* 線條顏色由下而上：最下面紅色、橙色、黃色、綠色、最上面紫色（無編號數字） */
+        // 第一條線 (i=0) 始終在 baseLineY，它是最下面的線
+        const colors = {
+            1: "#FF0000",  // 紅色 (最下面)
+            2: "#FFA500",  // 橙色
+            3: "#FFD700",  // 黃色
+            4: "#008000",  // 綠色
+            5: "#800080"   // 紫色 (最上面)
+        };
+
+        for (let i = 0; i < curLv; i++) {
+            let y = baseLineY - (i * s); 
+            
+            // i=0 代表最下面那條線，所以顏色編號就是 i + 1
+            ctx.strokeStyle = colors[i + 1];
+            ctx.lineWidth = 5;
+            
+            ctx.beginPath(); 
+            ctx.moveTo(100, y); 
+            ctx.lineTo(900, y); 
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = "#111"; 
+        ctx.font = `${s * 8.6}px serif`; 
+        ctx.fillText("𝄞", 110, (baseLineY - s * 0.4) + clefDownTotal);
+
+        if (targetNote) {
+            const steps = stepData[targetNote]; 
+            const y = baseLineY - (steps * (s / 2));
+            const x = canvas.width / 2 + 50;
+
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.ellipse(x, y, s * 0.666, s * 0.477, -Math.PI / 8, 0, 2 * Math.PI);
+            ctx.fill();
+
+            if (targetNote === "C4") {
+                ctx.strokeStyle = "#333"; 
+                ctx.lineWidth = 5;
+                ctx.beginPath(); ctx.moveTo(x - s, y); ctx.lineTo(x + s, y); ctx.stroke();
+            }
+        }
+    }
+
+    function showCorrectEffect(btn, letterSpan) {
+        btn.style.backgroundColor = "#90EE90";
+        if (letterSpan) letterSpan.textContent = "✔️ " + btn.querySelector('.letter-name')?.innerText?.replace(/[✔️❌]/g, '') || "✔️";
+        setTimeout(() => {
+            btn.style.backgroundColor = "#FFF";
+            if (letterSpan && letterSpan.textContent) {
+                letterSpan.textContent = letterSpan.textContent.replace(/[✔️❌]/g, '').trim();
+            }
+        }, 400);
+    }
+
+    function showWrongEffect(btn, letterSpan) {
+        btn.style.backgroundColor = "#FFB3B3";
+        btn.classList.add('shake-btn');
+        if (letterSpan) letterSpan.textContent = "❌ " + btn.querySelector('.letter-name')?.innerText?.replace(/[✔️❌]/g, '') || "❌";
+        setTimeout(() => {
+            btn.style.backgroundColor = "#FFF";
+            btn.classList.remove('shake-btn');
+            if (letterSpan && letterSpan.textContent) {
+                letterSpan.textContent = letterSpan.textContent.replace(/[✔️❌]/g, '').trim();
+            }
+        }, 400);
+    }
+
+    function startGame(lv) {
+        curLv = lv;
+        score = 0;
+        questionsLeft = 10;
+        isAnswering = false;
+        startTime = new Date();
+        document.getElementById('score-val').innerText = "0";
+        document.getElementById('lv-display').innerText = `LV ${curLv}`;
+        document.getElementById('overlay').style.display = 'none';
+        nextQuestion();
+    }
+
+    function nextQuestion() {
+        isAnswering = false;
+        const pool = notesMap[curLv];
+        let nextNote;
+        do {
+            nextNote = pool[Math.floor(Math.random() * pool.length)];
+        } while (nextNote === lastTargetNote && pool.length > 1);
+        
+        targetNote = nextNote;
+        lastTargetNote = nextNote;
+        
+        document.getElementById('count-display').innerText = `${11 - questionsLeft} / 10`;
+        drawScene();
+        generateChoices(targetNote.charAt(0));
+    }
+
+    function generateChoices(correctLetter) {
+        const pool = [...new Set(notesMap[curLv].map(n => n.charAt(0)))];
+        let choices = [correctLetter];
+        let others = pool.filter(l => l !== correctLetter).sort(() => Math.random() - 0.5);
+        while (choices.length < 3 && others.length > 0) choices.push(others.pop());
+        choices.sort(() => Math.random() - 0.5);
+
+        const area = document.getElementById('answer-area');
+        area.innerHTML = '';
+        choices.forEach(letter => {
+            const btn = document.createElement('button');
+            btn.className = 'animal-btn';
+            const img = document.createElement('img');
+            img.src = animalImgs[letter];
+            img.className = 'animal-img';
+            img.onerror = function() { this.src = `https://via.placeholder.com/90?text=${letter}`; };
+            const letterDiv = document.createElement('div');
+            letterDiv.className = 'letter-name';
+            letterDiv.textContent = letter;
+            btn.appendChild(img);
+            btn.appendChild(letterDiv);
+            
+            btn.onclick = () => {
+                if (isAnswering) return;
+                isAnswering = true;
+                const isCorrect = (letter === targetNote.charAt(0));
+                const letterSpan = btn.querySelector('.letter-name');
+                if (isCorrect) {
+                    showCorrectEffect(btn, letterSpan);
+                    score++;
+                    document.getElementById('score-val').innerText = score;
+                } else {
+                    showWrongEffect(btn, letterSpan);
+                }
+                questionsLeft--;
+                setTimeout(() => {
+                    if (questionsLeft > 0) nextQuestion();
+                    else showResult();
+                }, 400);
+            };
+            area.appendChild(btn);
+        });
+    }
+
+    function showResult() {
+        endTime = new Date();
+        const duration = Math.floor((endTime - startTime) / 1000);
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementById('menu-view').style.display = 'none';
+        document.getElementById('rank-view').style.display = 'none';
+        document.getElementById('result-view').style.display = 'block';
+        document.getElementById('result-text').innerText = `獲得分數：${score} / 10`;
+        document.getElementById('time-text').innerText = `耗時：${duration} 秒`;
+    }
+
+    function saveRecord() {
+        const duration = Math.floor((endTime - startTime) / 1000);
+        const nameInput = document.getElementById('playerNameInput').value.trim();
+        const finalName = nameInput || "匿名";
+        const record = { name: finalName, lv: curLv, score, time: duration, date: new Date().toLocaleDateString() };
+        let history = JSON.parse(localStorage.getItem('cmsNoteRank') || "[]");
+        history.push(record);
+        localStorage.setItem('cmsNoteRank', JSON.stringify(history));
+        document.getElementById('playerNameInput').value = ""; 
+    }
+
+    function submitAndRestart() { saveRecord(); startGame(curLv); }
+    function submitAndGoHome() { saveRecord(); goHome(); }
+
+    function showRank() {
+        document.getElementById('menu-view').style.display = 'none';
+        document.getElementById('result-view').style.display = 'none';
+        document.getElementById('rank-view').style.display = 'flex';
+        updateRankUI('all');
+    }
+
+    function updateRankUI(filter) {
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.toggle('active', (filter === 'all' && t.innerText === '全部') || t.innerText === `LV ${filter}`));
+        let data = JSON.parse(localStorage.getItem('cmsNoteRank') || "[]");
+        if (filter !== 'all') data = data.filter(d => d.lv === filter);
+        data.sort((a, b) => (b.score - a.score) || (a.time - b.time));
+        const body = document.getElementById('rank-body');
+        body.innerHTML = data.slice(0, 15).map((d, i) => `
+            <tr><td>${i+1}</td><td>${d.name}</td><td>${d.lv}</td><td>${d.score}</td><td>${d.time}s</td><td>${d.date}</td></tr>
+        `).join('') || '<tr><td colspan="6">尚未有紀錄</td></tr>';
+    }
+
+    function goHome() {
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementById('menu-view').style.display = 'block';
+        document.getElementById('result-view').style.display = 'none';
+        document.getElementById('rank-view').style.display = 'none';
+    }
+
+    window.onload = () => drawScene();
+</script>
+</body>
+</html>
